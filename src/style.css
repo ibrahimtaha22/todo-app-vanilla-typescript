@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+.filter-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
