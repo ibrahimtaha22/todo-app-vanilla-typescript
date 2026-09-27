@@ -2,13 +2,10 @@ import {
   afterTaskAdded,
   handleFilter,
   removeCompletedTask,
-  updateItemsLeft,
 } from "./utils";
-//@ts-ignore
 import { AddingTask } from "./utils";
 import {
   clearCompletedButton,
-  filterBox,
   themeToggleButton,
   todoForm,
   todoList,
@@ -24,12 +21,15 @@ import {
 export const initAppListeners = () => {
   themeToggleButton?.addEventListener("click", toggleTheme);
   todoForm?.addEventListener("submit", AddingTask);
-  todoList?.addEventListener("click", updateItemsLeft);
   todoList?.addEventListener("click", afterTaskAdded);
   todoList?.addEventListener("dragstart", handleTaskDragStart);
   todoList?.addEventListener("dragover", handleTaskDragOver);
   todoList?.addEventListener("drop", handleTaskDrop);
   todoList?.addEventListener("dragend", handleTaskDragEnd);
-  filterBox?.addEventListener("click", handleFilter);
+  document
+    .querySelectorAll("#filters-desktop, #filters-mobile")
+    .forEach((filterContainer) =>
+      filterContainer.addEventListener("click", handleFilter),
+    );
   clearCompletedButton?.addEventListener("click", removeCompletedTask);
 };

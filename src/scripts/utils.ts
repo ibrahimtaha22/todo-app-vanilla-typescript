@@ -1,6 +1,6 @@
 import {
-  EmptyList,
-  filterBox,
+  applyTaskFilter,
+  getCurrentTaskFilter,
   getEmptyStateElement,
   itemsLeft,
   todoList,
@@ -26,7 +26,6 @@ import emptyIcon from "../assets/icon-empty.svg";
 
 export const AddingTask: (event: Event) => void = (event) => {
   event.preventDefault();
-  todoList?.querySelector(".EmptyList")?.remove();
 
   const form = event.target as HTMLFormElement;
   const inputElement = form.querySelector("input") as HTMLInputElement;
@@ -34,14 +33,14 @@ export const AddingTask: (event: Event) => void = (event) => {
 
   if (!inputValue) return;
 
+  todoList?.querySelector(".EmptyList")?.remove();
+
   const savedTaskInfo = {
     id: Date.now(),
     task: inputValue,
   };
 
   saveToDB("tasks", savedTaskInfo);
-
-  console.log(savedTaskInfo.id);
 
   const TaskItem = ` <li
              id = ${savedTaskInfo.id}
@@ -74,6 +73,7 @@ export const AddingTask: (event: Event) => void = (event) => {
 
   // removeEmptyState();
   renderTask(TaskItem, "adding");
+  applyTaskFilter(getCurrentTaskFilter());
   updateFilterButtons();
   inputElement.value = "";
 };
@@ -129,7 +129,7 @@ export const renderEmptyState: RenderEmptyState = () => {
   if (tasks?.length === 0 || todoList?.children.length === 0) {
     (todoList as Element).innerHTML =
       `<li class="EmptyList flex flex-col justify-center items-center">
-      <p class="text-xl text-red-500 font-light">قائمة المهام فارغة</p>
+      <p class=" pt-1 sm:pt-3 text-xl text-[#9495a5] font-light">Your list is empty.</p>
       <img
         class="w-[70%]"
         src=${emptyIcon}
@@ -140,7 +140,6 @@ export const renderEmptyState: RenderEmptyState = () => {
 };
 
 export const removeFromDB: RemoveFromDB = (taskElement) => {
-  console.log(taskElement);
   const taskElementId = taskElement.id;
   const taskElementText = taskElement.querySelector("span")?.innerText.trim();
   const dataFromDB = getFromDB("tasks");
@@ -170,21 +169,23 @@ export const removeIdFromDB: RemoveIdFromDB = (taskId) => {
 
   if (isId) {
     const idIndex = checkedTaskIdFromDB.indexOf(taskId);
-    const splicedTaskIdArr = checkedTaskIdFromDB.toSpliced(idIndex, 1);
+    const splicedTaskIdArr = [
+      ...checkedTaskIdFromDB.slice(0, idIndex),
+      ...checkedTaskIdFromDB.slice(idIndex + 1),
+    ];
 
     localStorage.setItem("checkedTask-id", JSON.stringify(splicedTaskIdArr));
   }
 };
 
 export const removeTask: RemoveTask = (event) => {
-  const answer = confirm("هل انت متأكد من حذف المهمة؟");
+  const answer = confirm("Are you sure you want to delete this task?");
 
   if (answer === false) return;
 
   const targetItem = (event.target as HTMLElement).closest("li") as HTMLElement;
 
   const removedIdTask = targetItem?.id as string;
-  console.log(targetItem, removedIdTask);
 
   removeFromDB(targetItem);
   removeIdFromDB(removedIdTask);
@@ -212,55 +213,15 @@ export const afterTaskAdded: AfterTaskAdded = (event) => {
 };
 
 export const handleFilter = (event: Event) => {
-  const dataSet = (event.target as HTMLElement).dataset.filter;
+  if (!(event.target instanceof Element)) return;
 
-  filterBox
-    ?.querySelectorAll("button")
-    .forEach((element) => element.classList.remove("text-[#3a7bfd]"));
+  const filterButton = event.target.closest<HTMLButtonElement>(
+    ".filter-btn[data-filter]",
+  );
+  const filter = filterButton?.dataset.filter;
 
-  const activeTasks = todoList?.querySelectorAll("li[data-completed='false']");
-  //@ts-ignore
-  switch (dataSet) {
-    case "all":
-      (event.target as HTMLElement).classList.add("text-[#3a7bfd]");
-      todoList
-        ?.querySelectorAll("li[data-completed='true']")
-        .forEach((element) => element.classList.remove("hidden"));
-
-      activeTasks.forEach((element) => element.classList.remove("hidden"));
-
-      break;
-
-    case "active":
-      (event.target as HTMLElement).classList.add("text-[#3a7bfd]");
-      //@ts-ignore
-      const activeItmes = todoList?.querySelectorAll(
-        "li[data-completed='false']",
-      );
-      activeItmes.forEach((element) => element.classList.remove("hidden"));
-
-      todoList
-        ?.querySelectorAll("li[data-completed='true']")
-        .forEach((element) => element.classList.add("hidden"));
-
-      (itemsLeft as Element).textContent = `${activeItmes.length} items left`;
-      break;
-    case "completed":
-      (event.target as HTMLElement).classList.add("text-[#3a7bfd]");
-
-      //@ts-ignore
-      const completedItems = todoList?.querySelectorAll(
-        "li[data-completed='true']",
-      );
-      completedItems.forEach((element) => element.classList.remove("hidden"));
-      todoList
-        ?.querySelectorAll("li[data-completed='false']")
-        .forEach((element) => element.classList.add("hidden"));
-
-      break;
-
-    default:
-      break;
+  if (filter === "all" || filter === "active" || filter === "completed") {
+    applyTaskFilter(filter);
   }
 };
 
@@ -278,26 +239,19 @@ export const removeCompletedTask = () => {
   todoList
     ?.querySelectorAll('li[data-completed="true"]')
     .forEach((element) => element.remove());
-  todoList
-    ?.querySelectorAll('li[data-completed="false"]')
-    .forEach((element) => element.classList.remove("hidden"));
-
-  document
-    .querySelectorAll<HTMLButtonElement>(".filter-btn")
-    .forEach((button) => {
-      button.classList.toggle(
-        "text-[#3a7bfd]",
-        button.dataset.filter === "all",
-      );
-    });
+  applyTaskFilter("all");
 
   updateFilterButtons();
   renderEmptyState();
+  updateItemsLeft();
 };
 
 export const updateItemsLeft = () => {
-  const activeItmes = todoList?.querySelectorAll("li[data-completed='false']");
-  console.log(activeItmes.length);
+  const activeCount =
+    todoList?.querySelectorAll("li[data-completed='false']").length ?? 0;
+  const itemLabel = activeCount === 1 ? "item" : "items";
 
-  (itemsLeft as Element).textContent = `${activeItmes.length} items left`;
+  if (itemsLeft) {
+    itemsLeft.textContent = `${activeCount} ${itemLabel} left`;
+  }
 };

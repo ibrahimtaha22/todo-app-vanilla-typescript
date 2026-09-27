@@ -31,7 +31,7 @@ export type AddingTask = (event: Event) => void;
 
 export type HasCompletedTask = () => boolean;
 
-export type AfterTaskAdded = (event: MouseEvent | KeyboardEvent) => void;
+export type AfterTaskAdded = (event: MouseEvent) => void;
 
 export type RemoveFromDB = (parentItem: HTMLElement) => void;
 

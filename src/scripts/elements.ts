@@ -7,12 +7,38 @@ export const themeToggleButton = document.querySelector("#theme-toggle");
 
 export const getEmptyStateElement = () => document.querySelector(".EmptyList");
 
-export const filterBox = document.querySelector("#filters-desktop");
 export const clearCompletedButton = document.querySelector("#clear-completed");
 
 export const EmptyList = document.querySelector(".EmptyList");
 export const bodyElement = document.querySelector("body");
 export const itemsLeft = document.querySelector("#items-left");
+
+export type TaskFilter = "all" | "active" | "completed";
+
+let currentTaskFilter: TaskFilter = "all";
+
+export const getCurrentTaskFilter = () => currentTaskFilter;
+
+export const applyTaskFilter = (filter: TaskFilter) => {
+  currentTaskFilter = filter;
+
+  document
+    .querySelectorAll<HTMLButtonElement>(".filter-btn[data-filter]")
+    .forEach((button) => {
+      const isSelected = button.dataset.filter === filter;
+      button.classList.toggle("text-[#3a7bfd]", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    });
+
+  todoList?.querySelectorAll<HTMLLIElement>("li[data-completed]").forEach((item) => {
+    const isCompleted = item.dataset.completed === "true";
+    const shouldHide =
+      (filter === "active" && isCompleted) ||
+      (filter === "completed" && !isCompleted);
+
+    item.classList.toggle("hidden", shouldHide);
+  });
+};
 
 export const updateFilterButtons = () => {
   const taskCounts = {
@@ -33,4 +59,15 @@ export const updateFilterButtons = () => {
         });
     },
   );
+
+  const selectedFilterCount =
+    currentTaskFilter === "active"
+      ? taskCounts.active
+      : currentTaskFilter === "completed"
+        ? taskCounts.completed
+        : null;
+
+  if (selectedFilterCount === 0) {
+    applyTaskFilter("all");
+  }
 };

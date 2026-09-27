@@ -1,6 +1,10 @@
 import { saveToDB, updateItemsLeft } from "./utils";
 import { removeIdFromDB } from "./utils";
-import { updateFilterButtons } from "./elements";
+import {
+  applyTaskFilter,
+  getCurrentTaskFilter,
+  updateFilterButtons,
+} from "./elements";
 import type { ToggleTheme } from "./types";
 
 export const toggleTask = (event: MouseEvent | KeyboardEvent) => {
@@ -34,6 +38,7 @@ export const toggleTask = (event: MouseEvent | KeyboardEvent) => {
     listItem.dataset.completed = String(isChecked);
   }
 
+  applyTaskFilter(getCurrentTaskFilter());
   updateFilterButtons();
 
   const taskId = listItem?.id;
@@ -46,7 +51,7 @@ export const toggleTask = (event: MouseEvent | KeyboardEvent) => {
   updateItemsLeft();
 };
 
-export const toggleTheme = (event: MouseEvent | KeyboardEvent) => {
+export const toggleTheme = () => {
   const body = document.querySelector("body");
   body?.classList.toggle("dark");
   const isDark = body?.classList.contains("dark");
